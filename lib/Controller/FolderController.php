@@ -15,7 +15,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -23,6 +23,7 @@ namespace OCA\GroupFolders\Controller;
 
 use OCA\GroupFolders\Folder\FolderManager;
 use OCA\GroupFolders\Mount\MountProvider;
+use OCA\GroupFolders\Settings\SettingsManager;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\Files\IRootFolder;
@@ -35,6 +36,8 @@ class FolderController extends OCSController {
 	private $mountProvider;
 	/** @var IRootFolder */
 	private $rootFolder;
+	/** @var SettingsManager */
+	private $settingsManager;
 	/** @var string */
 	private $userId;
 
@@ -44,12 +47,14 @@ class FolderController extends OCSController {
 		FolderManager $manager,
 		MountProvider $mountProvider,
 		IRootFolder $rootFolder,
+		SettingsManager $settingsManager,
 		$userId
 	) {
 		parent::__construct($AppName, $request);
 		$this->manager = $manager;
 		$this->mountProvider = $mountProvider;
 		$this->rootFolder = $rootFolder;
+		$this->settingsManager = $settingsManager;
 		$this->userId = $userId;
 
 		$this->registerResponder('xml', function ($data) {
@@ -57,8 +62,28 @@ class FolderController extends OCSController {
 		});
 	}
 
+	/**
+	 * @NoAdminRequired
+	 */
 	public function getFolders() {
-		return new DataResponse($this->manager->getAllFoldersWithSize($this->getRootFolderStorageId()));
+		// Only selected users may use the API's
+		$admins = $this->settingsManager->getAdminUsers();
+		$canUse = false;
+		foreach($admins as $admin) {
+			if ($admin['type'] === 'user') {
+				if ($this->userId === $admin['id']) {
+					$canUse = true;
+					break;
+				}
+			}
+		};
+
+		if ($canUse) {
+			return new DataResponse($this->manager->getAllFoldersWithSize($this->getRootFolderStorageId()));
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
