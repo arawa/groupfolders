@@ -23,6 +23,9 @@
     "autoprefixer-loader": "^3.2.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.2.2",
+    "babel-plugin-polyfill-corejs2": "^0.1.10",
+    "babel-plugin-polyfill-corejs3": "^0.1.7",
+    "babel-plugin-polyfill-regenerator": "^0.1.6",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-polyfill": "^6.26.0",
     "browserslist-config-nextcloud": "0.1.0",
@@ -48,6 +51,7 @@
     "webpack-dev-server": "^3.11.1"
   },
   "dependencies": {
+    "@emotion/react": "^11.1.5",
     "less": "^3.13.1",
     "less-loader": "^7.3.0",
     "nextcloud-server": "^0.15.10",
