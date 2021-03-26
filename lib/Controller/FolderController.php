@@ -27,11 +27,14 @@ use OCA\GroupFolders\Settings\SettingsManager;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\Files\IRootFolder;
+use OCP\IGroupManager;
 use OCP\IRequest;
 
 class FolderController extends OCSController {
 	/** @var FolderManager */
 	private $manager;
+	/** @var IGroupManager */
+	private $groupManager;
 	/** @var MountProvider */
 	private $mountProvider;
 	/** @var IRootFolder */
@@ -43,6 +46,7 @@ class FolderController extends OCSController {
 
 	public function __construct(
 		$AppName,
+		IGroupManager $groupManager,
 		IRequest $request,
 		FolderManager $manager,
 		MountProvider $mountProvider,
@@ -51,6 +55,7 @@ class FolderController extends OCSController {
 		$userId
 	) {
 		parent::__construct($AppName, $request);
+		$this->groupManager = $groupManager;
 		$this->manager = $manager;
 		$this->mountProvider = $mountProvider;
 		$this->rootFolder = $rootFolder;
@@ -63,20 +68,35 @@ class FolderController extends OCSController {
 	}
 
 	/**
-	 * @NoAdminRequired
+	 *
+	 * @param string $userId
+	 * @return bool // true when the user may access the Controller's methods
+	 *
 	 */
-	public function getFolders() {
-		// Only selected users may use the API's
+	private function mayAccess($userId) {
+		// Admins may always access the Controller's methods
+		if ($this->groupManager->isAdmin($userId) {
+			return true;
+		}
+
+		// Check if user has been granted access
 		$admins = $this->settingsManager->getAdminUsers();
-		$canUse = false;
 		foreach($admins as $admin) {
 			if ($admin['type'] === 'user') {
 				if ($this->userId === $admin['id']) {
-					$canUse = true;
-					break;
+					return true;
 				}
 			}
 		};
+
+		return $false;
+	}
+
+	/**
+	 * @NoAdminRequired
+	 */
+	public function getFolders() {
+		$canUse = $this->mayAccess($this->userId);
 
 		if ($canUse) {
 			return new DataResponse($this->manager->getAllFoldersWithSize($this->getRootFolderStorageId()));
