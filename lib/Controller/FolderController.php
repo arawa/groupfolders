@@ -75,7 +75,7 @@ class FolderController extends OCSController {
 	 */
 	private function mayAccess($userId) {
 		// Admins may always access the Controller's methods
-		if ($this->groupManager->isAdmin($userId) {
+		if ($this->groupManager->isAdmin($userId)) {
 			return true;
 		}
 
@@ -96,9 +96,7 @@ class FolderController extends OCSController {
 	 * @NoAdminRequired
 	 */
 	public function getFolders() {
-		$canUse = $this->mayAccess($this->userId);
-
-		if ($canUse) {
+		if ($this->mayAccess($this->userId)) {
 			return new DataResponse($this->manager->getAllFoldersWithSize($this->getRootFolderStorageId()));
 		} else {
 			//TODO: Should return an access denied here
@@ -119,12 +117,19 @@ class FolderController extends OCSController {
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param string $mountpoint
 	 * @return DataResponse
 	 */
 	public function addFolder($mountpoint) {
-		$id = $this->manager->createFolder($mountpoint);
-		return new DataResponse(['id' => $id]);
+		if ($this->mayAccess($this->userId)) {
+			$id = $this->manager->createFolder($mountpoint);
+			return new DataResponse(['id' => $id]);
+		} else {
+			// TODO: Return proper error here
+			return new DataResponse(['error','unauthorized']);
+		}
+
 	}
 
 	/**
