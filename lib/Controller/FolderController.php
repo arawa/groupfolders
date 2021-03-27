@@ -86,6 +86,10 @@ class FolderController extends OCSController {
 				if ($this->userId === $admin['id']) {
 					return true;
 				}
+			} else if ($admin['type'] === 'group') {
+				// TODO: Check user group membership
+			} else {
+				// TODO: error or Circles
 			}
 		};
 
@@ -94,6 +98,7 @@ class FolderController extends OCSController {
 
 	/**
 	 * @NoAdminRequired
+	 * @return DataResponse
 	 */
 	public function getFolders() {
 		if ($this->mayAccess($this->userId)) {
@@ -105,15 +110,26 @@ class FolderController extends OCSController {
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @return DataResponse
 	 */
 	public function getFolder($id) {
-		return new DataResponse($this->manager->getFolder((int)$id, $this->getRootFolderStorageId()));
+		if ($this->mayAccess($this->userId)) {
+			return new DataResponse($this->manager->getFolder((int)$id, $this->getRootFolderStorageId()));
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	private function getRootFolderStorageId() {
-		return $this->rootFolder->getMountPoint()->getNumericStorageId();
+		if ($this->mayAccess($this->userId)) {
+			return $this->rootFolder->getMountPoint()->getNumericStorageId();
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
@@ -133,97 +149,151 @@ class FolderController extends OCSController {
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @return DataResponse
 	 */
 	public function removeFolder($id) {
-		$folder = $this->mountProvider->getFolder($id);
-		if ($folder) {
-			$folder->delete();
+		if ($this->mayAccess($this->userId)) {
+			$folder = $this->mountProvider->getFolder($id);
+			if ($folder) {
+				$folder->delete();
+			}
+			$this->manager->removeFolder($id);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
 		}
-		$this->manager->removeFolder($id);
-		return new DataResponse(['success' => true]);
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param string $mountPoint
 	 * @return DataResponse
 	 */
 	public function setMountPoint($id, $mountPoint) {
-		$this->manager->setMountPoint($id, $mountPoint);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->setMountPoint($id, $mountPoint);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param string $group
 	 * @return DataResponse
 	 */
 	public function addGroup($id, $group) {
-		$this->manager->addApplicableGroup($id, $group);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->addApplicableGroup($id, $group);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param string $group
 	 * @return DataResponse
 	 */
 	public function removeGroup($id, $group) {
-		$this->manager->removeApplicableGroup($id, $group);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->removeApplicableGroup($id, $group);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param string $group
 	 * @param string $permissions
 	 * @return DataResponse
 	 */
 	public function setPermissions($id, $group, $permissions) {
-		$this->manager->setGroupPermissions($id, $group, $permissions);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->setGroupPermissions($id, $group, $permissions);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param string $group
 	 * @param bool $manageAcl
 	 * @return DataResponse
 	 */
 	public function setManageACL($id, $mappingType, $mappingId, $manageAcl) {
-		$this->manager->setManageACL($id, $mappingType, $mappingId, $manageAcl);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->setManageACL($id, $mappingType, $mappingId, $manageAcl);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param float $quota
 	 * @return DataResponse
 	 */
 	public function setQuota($id, $quota) {
-		$this->manager->setFolderQuota($id, $quota);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->setFolderQuota($id, $quota);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param bool $acl
 	 * @return DataResponse
 	 */
 	public function setACL($id, $acl) {
-		$this->manager->setFolderACL($id, $acl);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->setFolderACL($id, $acl);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
+	 * @NoAdminRequired
 	 * @param int $id
 	 * @param string $mountpoint
 	 * @return DataResponse
 	 */
 	public function renameFolder($id, $mountpoint) {
-		$this->manager->renameFolder($id, $mountpoint);
-		return new DataResponse(['success' => true]);
+		if ($this->mayAccess($this->userId)) {
+			$this->manager->renameFolder($id, $mountpoint);
+			return new DataResponse(['success' => true]);
+		} else {
+			//TODO: Should return an access denied here
+			return new DataResponse(['error','unauthorized']);
+		}
 	}
 
 	/**
