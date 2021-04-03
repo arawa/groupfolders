@@ -29,6 +29,7 @@ use OCA\GroupFolders\ACL\UserMapping\UserMappingManager;
 use OCA\GroupFolders\CacheListener;
 use OCA\GroupFolders\Command\ExpireGroupVersions;
 use OCA\GroupFolders\Command\ExpireGroupVersionsPlaceholder;
+use OCA\GroupFolders\DelegatedAdminsMiddleware;
 use OCA\GroupFolders\Folder\FolderManager;
 use OCA\GroupFolders\Helper\LazyFolder;
 use OCA\GroupFolders\Listeners\LoadAdditionalScriptsListener;
@@ -44,6 +45,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\IAppContainer;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\Config\IMountProviderCollection;
+use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -122,6 +124,17 @@ class Application extends App implements IBootstrap {
 		});
 
 		$context->registerServiceAlias(IUserMappingManager::class, UserMappingManager::class);
+
+		$context->registerService('DelegatedAdminsMiddleware', function($c){
+		    return new DelegatedAdminsMiddleware(
+		        'groupfolders',
+		        $c->query(IAppConfig::class),
+		        $c->query(IGroupManager::class),
+		        $c->query(IRequest::class),
+		        $c->query(IUserSession::class)
+		        );
+		});
+		$context->registerMiddleware('OCA\GroupFolders\DelegatedAdminsMiddleware');
 	}
 
 	public function boot(IBootContext $context): void {
