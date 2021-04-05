@@ -10,6 +10,7 @@ import {SortArrow} from "./SortArrow";
 import FlipMove from "react-flip-move";
 import AsyncSelect from 'react-select/async';
 import Thenable = JQuery.Thenable;
+import select2 from 'select2';
 
 const defaultQuotaOptions = {
 	'1 GB': 1073741274,
@@ -64,26 +65,36 @@ export class App extends Component<{}, AppState> implements OC.Plugin<OC.Search.
 		this.api.listGroups().then((groups) => {
 			this.setState({groups});
 		});
+		// Setup the admin delegation input field
 		this.api.listDelegatedAdmins().then((delegatedAdminGroups) => {
-			// Setup the admin delegation input field
 			var t = this
 			var delegatedAdminsField = $('#groupfolders-root #groupfolders-admins-list');
 			delegatedAdminsField.val(delegatedAdminGroups);
-			OC.Settings.setupGroupsSelect(delegatedAdminsField);
+			delegatedAdminsField.select2({
+				data: this.state.groups.map(g => {
+					return { id: g.id, text: g.displayname };
+				}),
+				initSelection: function(element, callback) {
+					const selectedGroups = (delegatedAdminsField.val() as string).split('|').map(g => {
+						return { id: g, text: g }
+					})
+					callback(selectedGroups);
+				},
+				placeholder: 'Groups',
+				allowClear: true,
+				multiple: true,
+			});
 			delegatedAdminsField.change(function (event) {
-				var groups = (event.target as HTMLInputElement).value;
-				if (groups !== '') {
-					groups = '["' + groups.replace(/\|/g, '","') + '"]';
-				} else {
-					groups = '["admin"]';
-				}
+				const groups = (event.target as HTMLInputElement).value;
+				const uniqGroups = groups.split(/[,|]/).filter((value, index, self) => {
+					return self.indexOf(value) === index;
+				})
+				console.log('uniqGroups', uniqGroups);
 				// Persist changes in db
-				t.api.updateDelegatedAdmins(groups);
-			})
-		})
-
+				t.api.updateDelegatedAdmins(uniqGroups.toString());
+			});
+		});
 		OC.Plugins.register('OCA.Search.Core', this);
-
 	}
 
 	createRow = (event: FormEvent) => {

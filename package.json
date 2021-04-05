@@ -53,6 +53,7 @@
     "webpack-dev-server": "^3.11.1"
   },
   "dependencies": {
+    "@types/select2": "^4.0.53",
     "less": "^3.13.1",
     "less-loader": "^7.3.0",
     "nextcloud-server": "^0.15.10",
@@ -62,6 +63,7 @@
     "react-dom": "^16.14.0",
     "react-flip-move": "^3.0.4",
     "react-select": "^3.1.1",
+    "select2": "^4.1.0-rc.0",
     "vue": "^2.6.12",
     "vue-click-outside": "^1.1.0",
     "whatwg-fetch": "^3.5.0"
