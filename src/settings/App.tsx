@@ -8,9 +8,8 @@ import './App.scss';
 import {SubmitInput} from "./SubmitInput";
 import {SortArrow} from "./SortArrow";
 import FlipMove from "react-flip-move";
-import AsyncSelect from 'react-select/async';
+import {AsyncSelect, Select} from 'react-select';
 import Thenable = JQuery.Thenable;
-import select2 from 'select2';
 
 const defaultQuotaOptions = {
 	'1 GB': 1073741274,
@@ -22,6 +21,7 @@ const defaultQuotaOptions = {
 export type SortKey = 'mount_point' | 'quota' | 'groups' | 'acl';
 
 export interface AppState {
+	delegatedAdmins: Group[],
 	enabled: boolean;
 	folders: Folder[];
 	groups: Group[],
@@ -38,6 +38,7 @@ export class App extends Component<{}, AppState> implements OC.Plugin<OC.Search.
 	api = new Api();
 
 	state: AppState = {
+		delegatedAdmins: [],
 		enabled: false,
 		folders: [],
 		groups: [],
@@ -65,34 +66,8 @@ export class App extends Component<{}, AppState> implements OC.Plugin<OC.Search.
 		this.api.listGroups().then((groups) => {
 			this.setState({groups});
 		});
-		// Setup the admin delegation input field
-		this.api.listDelegatedAdmins().then((delegatedAdminGroups) => {
-			var t = this
-			var delegatedAdminsField = $('#groupfolders-root #groupfolders-admins-list');
-			delegatedAdminsField.val(delegatedAdminGroups);
-			delegatedAdminsField.select2({
-				data: this.state.groups.map(g => {
-					return { id: g.id, text: g.displayname };
-				}),
-				initSelection: function(element, callback) {
-					const selectedGroups = (delegatedAdminsField.val() as string).split('|').map(g => {
-						return { id: g, text: g }
-					})
-					callback(selectedGroups);
-				},
-				placeholder: 'Groups',
-				allowClear: true,
-				multiple: true,
-			});
-			delegatedAdminsField.change(function (event) {
-				const groups = (event.target as HTMLInputElement).value;
-				const uniqGroups = groups.split(/[,|]/).filter((value, index, self) => {
-					return self.indexOf(value) === index;
-				})
-				console.log('uniqGroups', uniqGroups);
-				// Persist changes in db
-				t.api.updateDelegatedAdmins(uniqGroups.toString());
-			});
+		this.api.listDelegatedAdmins().then((groups) => {
+			this.setState({delegatedAdmins: groups});
 		});
 		OC.Plugins.register('OCA.Search.Core', this);
 	}
@@ -201,6 +176,11 @@ export class App extends Component<{}, AppState> implements OC.Plugin<OC.Search.
 		return parseInt(OC.config.version,10) >= 16;
 	}
 
+	updateDelegatedAdminGroups(group: string): void {
+		console.log('updateDeleggatedAdminGroups', group);
+		this.api.updateDelegatedAdminGroups(group);
+	}
+
 	render() {
 		const rows = this.state.folders
 			.filter(folder => {
@@ -296,7 +276,7 @@ export class App extends Component<{}, AppState> implements OC.Plugin<OC.Search.
 					</td>
 					<td className="remove">
 						<a className="icon icon-delete icon-visible"
-						   onClick={this.deleteFolder.bind(this, folder)}
+						   onClick={this.deleteFolder.bind(this)}
 						   title={t('groupfolders', 'Delete')}/>
 					</td>
 				</tr>
@@ -312,8 +292,11 @@ export class App extends Component<{}, AppState> implements OC.Plugin<OC.Search.
 				<br/>
 				<em>{ t('groupfolders', "Specify hereunder the groups that allowed to manage groupfolders and use its API's.") }</em>
 				<br/>
-				<input type="hidden" id="groupfolders-admins-list" style={{width: 320 + 'px'}}/>
 			</div>
+			<ManageAdminDelegationSelect
+				allGroups={this.state.groups}
+				onChange={this.updateDelegatedAdminGroups}
+			/>
 			<h3>{ t('groupfolders', 'Group folders list') }</h3>
 			<table>
 				<thead>
@@ -366,13 +349,78 @@ export class App extends Component<{}, AppState> implements OC.Plugin<OC.Search.
 }
 
 
+interface ManageAdminDelegationSelectProps {
+	allGroups: Group[];
+	onChange: (id: string) => void;
+};
+
+function ManageAdminDelegationSelect({allGroups, onChange}: ManageAdminDelegationSelectProps) {
+	const options = allGroups.map(group => {
+		console.log('group', group)
+		return {
+			value: group.id,
+			label: group.displayname
+		};
+	});
+
+	return <Select
+		isMulti
+		options={options}
+		onChange={(option, details) => {
+			if (details.action === 'select-option') {
+				const addedOption = details.option
+				onChange && onChange(addedOption.id)
+			}
+			if (details.action === 'remove-value') {
+				const removedValue = details.removedValue
+				onChange && onChange(removedValue.id)
+			}
+		}}
+		placeholder={t('groupfolders', 'Select groups')}
+		styles={{
+			control: base => ({
+				...base,
+				minHeight: 25,
+				borderWidth: 1
+			}),
+			dropdownIndicator: base => ({
+				...base,
+				padding: 4
+			}),
+			clearIndicator: base => ({
+				...base,
+				padding: 4
+			}),
+			multiValue: base => ({
+				...base,
+				backgroundColor: 'var(--color-background-dark)',
+				color: 'var(--color-text)'
+			}),
+			valueContainer: base => ({
+				...base,
+				padding: '0px 6px'
+			}),
+			input: base => ({
+				...base,
+				margin: 0,
+				padding: 0
+			}),
+			menu: (provided) => ({
+				...provided,
+				backgroundColor: 'var(--color-main-background)',
+				borderColor: 'var(--color-border)',
+			})
+		}}
+	/>
+}
+
+
+
 interface ManageAclSelectProps {
 	folder: Folder;
 	onChange: (type: string, id: string, manageAcl: boolean) => void;
-	onSearch:  (name: string) => Thenable<{ groups: OCSGroup[]; users: OCSUser[]; }>;
+	onSearch: (name: string) => Thenable<{ groups: OCSGroup[]; users: OCSUser[]; }>;
 };
-
-
 
 function ManageAclSelect({onChange, onSearch, folder}: ManageAclSelectProps) {
 	const handleSearch = (inputValue: string) => {
