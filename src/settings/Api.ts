@@ -47,17 +47,17 @@ export class Api {
 	// Returns all NC groups
 	listGroups(): Thenable<Group[]> {
 		return $.getJSON(this.getUrl('delegation/groups'))
-				.then((data: OCSResult<{ groups: Group[]; }>) => data);
+			.then((data: OCSResult<{ groups: Group[]; }>) => data);
 	}
 
 	// Returns all groups that have been granted delegated admin rights on groupfolders
-	listDelegatedAdmins(): Thenable<string> {
+	listDelegatedAdmins(): Thenable<Group[]> {
 		return $.getJSON(this.getUrl('delegation/admins'))
-				.then((data: OCSResult<{ groups: Group[]; }>) => data);
+			.then((data: OCSResult<{ groups: Group[]; }>) => data);
 	}
 
 	// Updates the list of groups that have been granted delegated admin rights on groupfolders
-	updateDelegatedAdmins(groups: string): Thenable<void> {
+	updateDelegatedAdminGroups(groups: string): Thenable<void> {
 		return $.post(this.getUrl('delegation/admins'), {
 			     groups
 		}, null, 'json').then((data) => data);
