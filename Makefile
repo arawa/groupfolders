@@ -17,7 +17,7 @@ all: build/main.js
 
 clean:
 	rm -rf $(sign_dir)
-	rm -rf $(build_dir)/$(app_name)-$(version).tar.gz
+	rm -rf $(build_dir)/$(app_name)-$(version)-22.tar.gz
 	rm -rf node_modules
 
 node_modules: package.json
@@ -69,7 +69,7 @@ appstore: clean build/main.js
 	--exclude=/vendor \
 	--exclude=/webpack.* \
 	$(project_dir)/ $(sign_dir)/$(app_name)
-	tar -czf $(build_dir)/$(app_name)-$(version).tar.gz \
+	tar -czf $(build_dir)/$(app_name)-$(version)-22.tar.gz \
 		-C $(sign_dir) $(app_name)
 	@if [ -f $(cert_dir)/$(app_name).key ]; then \
 		echo "Signing package…"; \
