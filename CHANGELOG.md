@@ -1,3 +1,10 @@
+## 9.2.0
+
+
+### Add
+
+- Add the groups/users that manage the groupfolder.
+
 ## 9.1.0
 
 ### Add

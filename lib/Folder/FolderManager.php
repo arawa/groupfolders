@@ -167,7 +167,22 @@ class FolderManager {
 		return $folderMap;
 	}
 
-	private function getManageAcl($mappings): array {
+	/**
+	 * @return array[]
+	 *
+	 * @psalm-return array<int, list<mixed>>
+	 * @throws Exception
+	 */
+	private function getFolderMappings(int $id): array {
+		$query = $this->connection->getQueryBuilder();
+		$query->select('*')
+			->from('group_folders_manage')
+			->where($query->expr()->eq('folder_id', $query->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+
+		return $query->executeQuery()->fetchAll();
+	}
+
+	private function getManageAcl(array $mappings): array {
 		return array_filter(array_map(function ($entry) {
 			if ($entry['mapping_type'] === 'user') {
 				$user = \OC::$server->getUserManager()->get($entry['mapping_id']);
@@ -211,13 +226,15 @@ class FolderManager {
 		$row = $result->fetch();
 		$result->closeCursor();
 
+		$folderMappings = $this->getFolderMappings($id);
 		return $row ? [
 			'id' => (int)$id,
 			'mount_point' => $row['mount_point'],
 			'groups' => isset($applicableMap[$id]) ? $applicableMap[$id] : [],
 			'quota' => $row['quota'],
 			'size' => $row['size'] ? $row['size'] : 0,
-			'acl' => (bool)$row['acl']
+			'acl' => (bool)$row['acl'],
+			'manage' => $this->getManageAcl($folderMappings)
 		] : false;
 	}
 
