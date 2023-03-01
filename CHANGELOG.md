@@ -1,3 +1,9 @@
+## 9.2.1
+
+### Fixed
+
+- Remove the personal section from settings ([#44](https://github.com/arawa/groupfolders/pull/44))
+
 ## 9.2.0
 
 
