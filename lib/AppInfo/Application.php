@@ -45,6 +45,7 @@ use OCA\GroupFolders\Folder\FolderManager;
 use OCA\GroupFolders\Helper\LazyFolder;
 use OCA\GroupFolders\Listeners\CircleDestroyedEventListener;
 use OCA\GroupFolders\Listeners\LoadAdditionalScriptsListener;
+use OCA\GroupFolders\Listeners\WorkspaceCreateListener;
 use OCA\GroupFolders\Mount\MountProvider;
 use OCA\GroupFolders\Trash\TrashBackend;
 use OCA\GroupFolders\Trash\TrashManager;
@@ -66,6 +67,7 @@ use OCP\IRequest;
 use OCP\ISession;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use OCA\Workspace\Events\WorkspaceCreateEvent;
 
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'groupfolders';
@@ -87,6 +89,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(LoadAdditionalScriptsEvent::class, LoadAdditionalScriptsListener::class);
 		$context->registerEventListener(BeforeTemplateRenderedEvent::class, LoadAdditionalScriptsListener::class);
 		$context->registerEventListener(CircleDestroyedEvent::class, CircleDestroyedEventListener::class);
+		$context->registerEventListener(WorkspaceCreateEvent::class, WorkspaceCreateListener::class);
 
 		$context->registerServiceAlias('GroupAppFolder', LazyFolder::class);
 
